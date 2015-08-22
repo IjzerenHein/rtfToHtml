@@ -1,0 +1,48 @@
+{
+  "name": "rtfToHtml",
+  "version": "0.0.1",
+  "homepage": "https://github.com/IjzerenHein/rtfToHtml",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/IjzerenHein/rtfToHtml.git"
+  },
+  "main": "rtfToHtml.js",
+  "author": {
+    "name": "Hein Rutjes <hrutjes@gmail.com>"
+  },
+  "description": "Parse RTF and write output as an HTML file",
+  "keywords": [
+    "rtf",
+    "rtfparser",
+    "rtfparse",
+    "rtftohtml",
+    "rtf2html"
+  ],
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "bugs": {
+    "url": "https://github.com/IjzerenHein/rtfToHtml/issues"
+  },
+  "engines": {
+    "node": ">= 0.10.0"
+  },
+  "files": [
+    "src",
+    "dist",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "babel": "^5.6.23",
+    "babel-eslint": "^4.0.5",
+    "commander": "^2.8.1",
+    "grunt": "^0.4.5",
+    "grunt-contrib-concat": "^0.5.1",
+    "grunt-eslint": "^14.0.0",
+    "grunt-exec": "^0.4.6",
+    "grunt-jscs": "^1.8.0",
+    "grunt-peg": "^1.5.0"
+  },
+  "scripts": {
+    "rtfToHtml": "./node_modules/.bin/babel-node ./src/rtfToHtml.js"
+  }
+}

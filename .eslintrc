@@ -1,0 +1,21 @@
+{
+  "parser": "babel-eslint",
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+    "kiwi",
+    "c"
+  },
+  "ecmaFeatures": {
+    "classes": true,
+    "modules": true,
+    "blockBindings": true,
+    "arrowFunctions": true
+  },
+  "rules": {
+    "quotes": [2, "single"],
+    "no-underscore-dangle": false
+  }
+}

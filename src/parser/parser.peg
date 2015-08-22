@@ -1,0 +1,31 @@
+document
+  = group:group { return group}
+
+/*content
+  = items:(item)* { return items}
+*/
+
+group
+ = "{" items:(item)* space? "}" space? { return {group: items}}
+
+item
+ = group:group {return group}
+ / codes:codes {return codes}
+ / text:text {return text}
+
+codes
+ = (space)? codes:(controlCode)+ {return codes}
+
+controlCode
+  = "\\" code:[0-9A-Za-z]+ {return code.join('')}
+
+text
+ = space words:(word)+ {return words.join('')}
+
+word
+ = space:(space)? chars:[0-9A-Za-z\.;]+ {return space ? (space + chars.join('')) : chars.join('')}
+
+space
+ = " " {return " "}
+ / "\n" {return "\n"}
+ / "\t" {return "\t"}
