@@ -1,12 +1,8 @@
 document
-  = group:group { return group}
-
-/*content
-  = items:(item)* { return items}
-*/
+  = group:group (space)* { return group}
 
 group
- = "{" items:(item)* space? "}" space? { return {group: items}}
+ = (space)* "{" items:(item)* (space)* "}" { return {group: items}}
 
 item
  = group:group {return group}
@@ -14,18 +10,19 @@ item
  / text:text {return text}
 
 codes
- = (space)? codes:(controlCode)+ {return codes}
+ = codes:(code)+ (space)* {return codes}
 
-controlCode
-  = "\\" code:[0-9A-Za-z]+ {return code.join('')}
+code
+ = (space)* "\\" code:[0-9a-z\n]+ (space)* optional:"?"? {return code.join('').replace('\n', '').replace('\r', '') + (optional || '')}
 
 text
- = space words:(word)+ {return words.join('')}
+ = words:(word)+ {return words.join('')}
 
 word
- = space:(space)? chars:[0-9A-Za-z\.;]+ {return space ? (space + chars.join('')) : chars.join('')}
+ = leadingSpace:(space)* chars:[0-9A-Za-z\.;\:\-\,\!]+ trailingSpace:(space)* {return (leadingSpace || '') + chars.join('') + (trailingSpace || '')}
 
 space
  = " " {return " "}
- / "\n" {return "\n"}
+ / "\n" {return ""}
  / "\t" {return "\t"}
+ / "\r" {return ""}

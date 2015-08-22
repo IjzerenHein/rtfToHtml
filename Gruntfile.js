@@ -22,8 +22,9 @@ module.exports = function(grunt) {
         }
     },
     exec: {
-      'test': './node_modules/.bin/babel-node ./src/rtfToHtml.js ./samples/superSimple.rtf ./html/superSimple.html',
+      'test-superSimple': './node_modules/.bin/babel-node ./src/rtfToHtml.js ./samples/superSimple.rtf ./html/superSimple.html',
       'test-simple': './node_modules/.bin/babel-node ./src/rtfToHtml.js ./samples/simple.rtf ./html/simple.html',
+      'test': './node_modules/.bin/babel-node ./src/rtfToHtml.js ./samples/text.rtf ./html/medium.html',
     }
   });
 
