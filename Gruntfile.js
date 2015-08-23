@@ -24,7 +24,7 @@ module.exports = function(grunt) {
     exec: {
       'test-superSimple': './node_modules/.bin/babel-node ./src/rtfToHtml.js ./samples/superSimple.rtf ./html/superSimple.html',
       'test-simple': './node_modules/.bin/babel-node ./src/rtfToHtml.js ./samples/simple.rtf ./html/simple.html',
-      'test': './node_modules/.bin/babel-node ./src/rtfToHtml.js ./samples/text.rtf ./html/medium.html',
+      'test': './node_modules/.bin/babel-node ./src/rtfToHtml.js ./samples/text.rtf ./html/text.html',
     }
   });
 
@@ -38,6 +38,6 @@ module.exports = function(grunt) {
   grunt.registerTask('lint', ['eslint', 'jscs']);
   grunt.registerTask('parser', ['peg']);
   grunt.registerTask('dist', ['parser']);
-  grunt.registerTask('test', ['parser', 'exec:test']);
+  grunt.registerTask('test', ['exec:test']);
   grunt.registerTask('default', ['lint', 'dist']);
 };
