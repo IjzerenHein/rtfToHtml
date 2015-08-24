@@ -7,7 +7,7 @@ function getInheritedStateValue(inheritedStates, key) {
 }
 
 function inchToPx(inch) {
-    return Math.floor(inch / 15);
+    return Math.floor(inch / 10);
 }
 
 function formatStyles(styles, inheritedStyles) {
@@ -50,25 +50,39 @@ function applyStyles(context) {
 
 function beginRightAlignedTab(context) {
     context.rightAlignedTab = true;
-    pushStyles(context);
-    context.res.push('<span style="float: right;">');
+    //pushStyles(context);
+    //context.res.push('<span style="float: right;">');
+    context.res[context.divIndex] = '<div style="display: inline-block; text-align: right; width: ' + getTabWidth(context) + 'px;">';
 }
 
 function endRightAlignedTab(context) {
     if (context.rightAlignedTab) {
         context.rightAlignedTab = false;
-        context.res.push('</span>');
-        popStyles(context);
+        //context.res.push('</span>');
+        //popStyles(context);
     }
 }
 
 function getTabWidth(context) {
     const begin = (context.tabIndex === 0) ? 0 : context.tabs[context.tabIndex - 1].pos;
-    const end = ((context.tabIndex + 1) < context.tabs.length) ? context.tabs[context.tabIndex + 1].pos : context.paperWidth;
+    const end = ((context.tabIndex + 1) < context.tabs.length) ? context.tabs[context.tabIndex].pos : getPaperWidth(context);
     return end - begin;
 }
 
-function format(data, context) {
+function getPaperWidth(context) {
+    //const paperWidth = context.paperWidth - (context.marginLeft || 0) - (context.marginRight || 0);
+    const paperWidth = context.paperWidth - 3288;
+    return inchToPx(paperWidth);
+}
+
+function parseIntCode(code, prefix) {
+    if (code.substring(0, prefix.length) === prefix) {
+        console.log(code);
+        return parseInt(code.substring(prefix.length));
+    }
+}
+
+function format(context, data) {
     let ignoreAll;
     let ignoreNextText;
     for (var i = 0; i < data.length; i++) {
@@ -93,7 +107,7 @@ function format(data, context) {
                         if (context.tabIndex < context.tabs.length) {
                             if (context.divIndex < 0) {
                                 context.divIndex = context.res.length;
-                                context.res.push('<div style="display: inline-block; width: ' + context.paperWidth + 'px;">');
+                                context.res.push('<div style="display: inline-block; width: ' + getPaperWidth(context) + 'px;">');
                                 pushStyles(context);
                             }
                             if (context.rightAlignedTab) {
@@ -108,15 +122,16 @@ function format(data, context) {
                             context.res[context.divIndex] = '<div style="display: inline-block; width: ' + getTabWidth(context) + 'px;">';
                             if (tab.align === 'right') {
                                 beginRightAlignedTab(context);
+                                context.tabIndex++;
                             }
                             else {
+                                context.tabIndex++;
                                 popStyles(context);
                                 context.res.push('</div>');
                                 context.divIndex = context.res.length;
-                                context.res.push('<div style="display: inline-block; width: ' + (context.paperWidth - tab.pos) + 'px;">');
+                                context.res.push('<div style="display: inline-block; width: ' + (getPaperWidth(context) - tab.pos) + 'px;">');
                                 pushStyles(context);
                             }
-                            context.tabIndex++;
                         }
                         break;
                     case 'colortbl':
@@ -146,11 +161,11 @@ function format(data, context) {
                 if (fontSize) {
                     context.styles['font-size'] = fontSize[0].substring(2) + 'px';
                 }
-                let paperWidth = code.match(/paperw(\d+)/);
-                if (paperWidth) {
-                    context.paperWidth = inchToPx(paperWidth[0].substring(6));
-                    //console.log('paperWidth: ' + paperWidth[0].substring(6) + ' = ' + context.paperWidth + 'px');
-                }
+                context.paperWidth = parseIntCode(code, 'paperw') || context.paperWidth;
+                context.marginLeft = parseIntCode(code, 'margl') || context.marginLeft;
+                context.marginRight = parseIntCode(code, 'margr') || context.marginRight;
+                context.marginRight = parseIntCode(code, 'li') || context.marginRight;
+
                 let tabStop = code.match(/tx(\d+)/);
                 if (tabStop) {
                     context.tabs = resetTabs ? [] : context.tabs;
@@ -161,10 +176,10 @@ function format(data, context) {
                     });
                     tabAlign = undefined;
                 }
-                let leftIndent = code.match(/li(\d+)/);
-                if (leftIndent) {
-                    leftIndent = inchToPx(leftIndent[0].substring(2));
-                    context.styles['text-indent'] = leftIndent ? (leftIndent + 'px') : 0;
+                let leftIndent = parseIntCode(code, 'li');
+                if (leftIndent !== undefined) {
+                    context.styles['text-indent'] = leftIndent ? (inchToPx(leftIndent) + 'px') : 0;
+                    context.styles['white-space'] = leftIndent ? 'nowrap' : 'normal';
                 }
             }
         }
@@ -174,7 +189,7 @@ function format(data, context) {
                     if (!ignoreNextText) {
                         if (context.divIndex < 0) {
                             context.divIndex = context.res.length;
-                            context.res.push('<div style="display: inline-block; width: ' + context.paperWidth + 'px;">');
+                            context.res.push('<div style="display: inline-block; width: ' + getPaperWidth(context) + 'px;">');
                             pushStyles(context);
                         }
                         applyStyles(context);
@@ -186,7 +201,7 @@ function format(data, context) {
                 }
                 else {
                     pushStyles(context);
-                    format(item.group, context);
+                    format(context, item.group);
                     popStyles(context);
                 }
             }
@@ -196,23 +211,14 @@ function format(data, context) {
 }
 
 export default function(parsedRtf) {
-    return '' +
-        '<!DOCTYPE html>\n' +
-        '<html>\n' +
-        '<head>\n' +
-        '<style>\n' +
-        '.rtf-line {display: inline-block; /*white-space: nowrap;*/}\n' +
-        '</style>\n' +
-        '</head>\n' +
-        '<body>\n' +
-    format(parsedRtf.group, {
+    const context = {
         res: [],
         divIndex: -1,
         inheritedStyles: [],
         styles: {},
         tabIndex: 0,
         tabs: []
-    }).join('') + '\n' +
-        '</body>\n' +
-        '</html>\n';
+    };
+    format(context, parsedRtf.group);
+    return '<div style="font-family: \'Times New Roman\';">' + context.res.join('') + '</div>';
 };
