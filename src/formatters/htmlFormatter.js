@@ -26,11 +26,11 @@ function updateStyle(currentStyle, styles, inheritedStyles) {
     }
 }*/
 
-function format(data, inheritedStyles) {
+function format(data, inheritedStyles, context) {
     const styles = {};
-    let table;
     let currentStyle;
-    let res = '';
+    let ignoreAll;
+    let ignoreNextText;
     for (var i = 0; i < data.length; i++) {
         const item = data[i];
         if (Array.isArray(item)) {
@@ -38,14 +38,28 @@ function format(data, inheritedStyles) {
                 const code = item[j];
                 switch (code) {
                     case 'par':
-                        /*if (table) {
-                            table +=
-                        }*/
-                        res += '<br>';
+                        //context.res.push('</div>\n');
+                        //context.divIndex = -1;
+                        context.res.push('<br>');
                         break;
                     case 'tab':
-                        //table = table || '<table><tr width: 100px;>';
-                        res += '<span style="width: 100px; display: inline-block;">&nbsp</span>';
+                        //res += '<span style="position: absolute; ">'
+                        /*if (!table) {
+                            table = true;
+                            inheritedStyles = [styles].concat(inheritedStyles);
+                            styles = {};
+                            insideTableRow = true;
+                            res += '<table><tr width: 100px;><td>';
+                        }
+                        res += '</td><td>';*/
+                        break;
+                    case 'colortbl':
+                    case 'fonttbl':
+                    case 'stylesheet':
+                        ignoreAll = true;
+                        break;
+                    case 'expndtw':
+                        ignoreNextText = true;
                         break;
                     case 'i': styles['font-style'] = 'italic'; break;
                     case 'i0': styles['font-style'] = 'normal'; break;
@@ -74,27 +88,41 @@ function format(data, inheritedStyles) {
             }
             if (style !== currentStyle) {
                 if (currentStyle) {
-                    res += '</span>';
+                    context.res.push('</span>');
                 }
                 currentStyle = style;
-                if (currentStyle) {
-                    res += '<span style="' + currentStyle + '">';
+                if (currentStyle && !ignoreAll) {
+                    context.res.push('<span style="' + currentStyle + '">');
                 }
             }
-            if (typeof item === 'string') {
-                res += item;
-            }
-            else {
-                res += format(item.group, [styles].concat(inheritedStyles));
+            /*if (context.divIndex === -1) {
+                context.divIndex = context.res.length;
+                context.res.push('<div>&nbsp;');
+            }*/
+            if (!ignoreAll) {
+                if (typeof item === 'string') {
+                    if (!ignoreNextText) {
+                        context.res.push(item);
+                    }
+                    else {
+                        ignoreNextText = false;
+                    }
+                }
+                else {
+                    format(item.group, [styles].concat(inheritedStyles), context);
+                }
             }
         }
     }
     if (currentStyle) {
-        res += '</span>\n';
+        context.res.push('</span>\n');
     }
-    return res;
+    return context.res;
 }
 
 export default function(parsedRtf) {
-    return '<div>' + format(parsedRtf.group, []) + '</div>';
+    return '<div>' + format(parsedRtf.group, [], {
+        res: [],
+        divIndex: -1
+    }).join('') + '</div>';
 };
