@@ -13,7 +13,7 @@ codes
  = codes:(code)+ (space)* {return codes}
 
 code
- = (space)* "\\" code:[0-9a-z\n]+ (space)* optional:"?"? {return code.join('').replace('\n', '').replace('\r', '') + (optional || '')}
+ = (space)* "\\" code:[\'0-9a-z\n]+ (space)* optional:"?"? {return code.join('').replace('\n', '').replace('\r', '') + (optional || '')}
 
 text
  = words:(word)+ {return words.join('')}

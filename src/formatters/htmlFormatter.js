@@ -6,15 +6,19 @@ function getInheritedStateValue(inheritedStates, key) {
     }
 }
 
-function inchToPx(inch) {
-    return Math.floor(inch / 10);
+function twipToPx(twip) {
+    return Math.floor(twip / 9);
 }
 
 function formatStyles(styles, inheritedStyles) {
+    inheritedStyles = inheritedStyles || [];
     let style = '';
     for (var key in styles) {
         const value = (styles[key] && (styles[key] !== getInheritedStateValue(inheritedStyles, key))) ? styles[key] : undefined;
         if (value) {
+            if (style) {
+                style += ' ';
+            }
             style += key + ': ' + value + ';'
         }
     }
@@ -65,14 +69,18 @@ function endRightAlignedTab(context) {
 
 function getTabWidth(context) {
     const begin = (context.tabIndex === 0) ? 0 : context.tabs[context.tabIndex - 1].pos;
-    const end = ((context.tabIndex + 1) < context.tabs.length) ? context.tabs[context.tabIndex].pos : getPaperWidth(context);
+    const end = ((context.tabIndex + 1) < context.tabs.length) ? context.tabs[context.tabIndex].pos : getContentWidth(context);
     return end - begin;
 }
 
-function getPaperWidth(context) {
+function getContentWidth(context) {
     //const paperWidth = context.paperWidth - (context.marginLeft || 0) - (context.marginRight || 0);
-    const paperWidth = context.paperWidth - 3288;
-    return inchToPx(paperWidth);
+    return twipToPx(context.paperWidth - context.margins[3] - context.margins[1]);
+}
+
+function getContentHeight(context) {
+    //const paperHeight = context.paperHeight - (context.marginTop || 0) - (context.marginBottom || 0);
+    return twipToPx(context.paperHeight - context.margins[0] - context.margins[2]);
 }
 
 function parseIntCode(code, prefix) {
@@ -82,14 +90,80 @@ function parseIntCode(code, prefix) {
     }
 }
 
-function format(context, data) {
-    let ignoreAll;
-    let ignoreNextText;
+function rgbToHex(r, g, b) {
+    r = r.toString(16);
+    r = r.length == 1 ? '0' + r : r;
+    g = g.toString(16);
+    g = g.length == 1 ? '0' + g : g;
+    b = b.toString(16);
+    b = b.length == 1 ? '0' + b : b;
+    return '#' + r + g + b;
+}
+
+const GroupType = {
+    ROOT: -1,
+    NORMAL: 0,
+    COLORTABLE: 1,
+    FONTTABLE: 2
+}
+
+function processFontTable(context, data) {
+    const font = {
+        index: 0
+    };
+    for (var i = 0; i < data.length; i++) {
+        const item = data[i];
+        if (Array.isArray(item)) {
+            for (var j = 0; j < item.length; j++) {
+                const code = item[j];
+                font.index = parseIntCode(code, 'f') || font.index;
+            }
+        }
+        else if (typeof item === 'string') {
+            font.name = item.substring(0, item.length - 1); // trim ';'
+            const dashIndex = font.name.indexOf('-');
+            if (dashIndex >= 0) {
+                font.name = font.name.substring(0, dashIndex);
+            }
+        }
+    }
+    if (font.index !== undefined) {
+        context.fonts.length = Math.max(context.fonts.length, font.index + 1);
+        context.fonts[font.index] = font;
+    }
+}
+
+function processString(context, localState, item) {
+    if (localState.childGroupType === GroupType.COLORTABLE) {
+        context.colors.push(rgbToHex(context.redColor, context.greenColor, context.blueColor));
+        context.redColor = 0;
+        context.greenColor = 0;
+        context.blueColor = 0;
+    }
+    else if (!localState.ignoreNextText) {
+        if (context.divIndex < 0) {
+            context.divIndex = context.res.length;
+            context.res.push('<div style="display: inline-block; width: ' + getContentWidth(context) + 'px;">');
+            pushStyles(context);
+        }
+        applyStyles(context);
+        context.res.push(item);
+    }
+    else {
+        localState.ignoreNextText = false;
+    }
+}
+
+function format(context, data, groupType) {
+    const localState = {
+        childGroupType: GroupType.NORMAL
+    };
     for (var i = 0; i < data.length; i++) {
         const item = data[i];
         if (Array.isArray(item)) {
             let resetTabs = true;
             let tabAlign;
+            let insertText;
             for (var j = 0; j < item.length; j++) {
                 const code = item[j];
                 switch (code) {
@@ -107,7 +181,7 @@ function format(context, data) {
                         if (context.tabIndex < context.tabs.length) {
                             if (context.divIndex < 0) {
                                 context.divIndex = context.res.length;
-                                context.res.push('<div style="display: inline-block; width: ' + getPaperWidth(context) + 'px;">');
+                                context.res.push('<div style="display: inline-block; width: ' + getContentWidth(context) + 'px;">');
                                 pushStyles(context);
                             }
                             if (context.rightAlignedTab) {
@@ -129,18 +203,27 @@ function format(context, data) {
                                 popStyles(context);
                                 context.res.push('</div>');
                                 context.divIndex = context.res.length;
-                                context.res.push('<div style="display: inline-block; width: ' + (getPaperWidth(context) - tab.pos) + 'px;">');
+                                context.res.push('<div style="display: inline-block; width: ' + (getContentWidth(context) - tab.pos) + 'px;">');
                                 pushStyles(context);
                             }
                         }
                         break;
-                    case 'colortbl':
                     case 'fonttbl':
+                        localState.childGroupType = GroupType.FONTTABLE;
+                        context.fonts = [];
+                        break;
+                    case 'colortbl':
+                        localState.childGroupType = GroupType.COLORTABLE;
+                        context.colors = [];
+                        context.redColor = 0;
+                        context.greenColor = 0;
+                        context.blueColor = 0;
+                        break;
                     case 'stylesheet':
-                        ignoreAll = true;
+                        localState.ignoreAll = true;
                         break;
                     case 'expndtw':
-                        ignoreNextText = true;
+                        localState.ignoreNextText = true;
                         break;
                     case 'tqr':
                         context.tabs = resetTabs ? [] : context.tabs;
@@ -156,53 +239,66 @@ function format(context, data) {
                     case 'qr':
                         context.styles['text-align'] = (code === 'qc') ? 'center' : (code === 'qr') ? 'right' : 'left';
                         break;
+                    case '\'8e': insertText = '&#xe9'; break;
+                    case '\'8f': insertText = '&#xe8'; break;
+                    case '\'90': insertText = '&#xeA'; break;
+                    case '\'91': insertText = '&#xeA'; break;
+                    case '\'95': insertText = '&#xeE'; break;
+                }
+                if (groupType === GroupType.ROOT) {
+                    context.paperWidth = parseIntCode(code, 'paperw') || context.paperWidth;
+                    context.paperHeight = parseIntCode(code, 'paperh') || context.paperHeight;
+                    context.marginLeft = parseIntCode(code, 'margl') || context.marginLeft;
+                    context.marginRight = parseIntCode(code, 'margr') || context.marginRight;
+                    context.marginTop = parseIntCode(code, 'margt') || context.marginTop;
+                    context.marginBottom = parseIntCode(code, 'margb') || context.marginBottom;
+                }
+                else if (localState.childGroupType === GroupType.COLORTABLE) {
+                    context.redColor = parseIntCode(code, 'red') || context.redColor;
+                    context.greenColor = parseIntCode(code, 'green') || context.greenColor;
+                    context.blueColor = parseIntCode(code, 'blue') || context.blueColor;
                 }
                 let fontSize = code.match(/fs(\d+)/);
                 if (fontSize) {
                     context.styles['font-size'] = fontSize[0].substring(2) + 'px';
                 }
-                context.paperWidth = parseIntCode(code, 'paperw') || context.paperWidth;
-                context.marginLeft = parseIntCode(code, 'margl') || context.marginLeft;
-                context.marginRight = parseIntCode(code, 'margr') || context.marginRight;
-                context.marginRight = parseIntCode(code, 'li') || context.marginRight;
-
                 let tabStop = code.match(/tx(\d+)/);
                 if (tabStop) {
                     context.tabs = resetTabs ? [] : context.tabs;
                     resetTabs = false;
                     context.tabs.push({
-                        pos: inchToPx(tabStop[0].substring(2)),
+                        pos: twipToPx(tabStop[0].substring(2)),
                         align: tabAlign || 'left'
                     });
                     tabAlign = undefined;
                 }
                 let leftIndent = parseIntCode(code, 'li');
                 if (leftIndent !== undefined) {
-                    context.styles['text-indent'] = leftIndent ? (inchToPx(leftIndent) + 'px') : 0;
+                    context.styles['text-indent'] = leftIndent ? (twipToPx(leftIndent) + 'px') : 0;
                     context.styles['white-space'] = leftIndent ? 'nowrap' : 'normal';
+                }
+                if (insertText) {
+                    if (!localState.ignoreAll) {
+                        processString(context, localState, insertText);
+                    }
+                    insertText = undefined;
                 }
             }
         }
         else {
-            if (!ignoreAll) {
+            if (!localState.ignoreAll) {
                 if (typeof item === 'string') {
-                    if (!ignoreNextText) {
-                        if (context.divIndex < 0) {
-                            context.divIndex = context.res.length;
-                            context.res.push('<div style="display: inline-block; width: ' + getPaperWidth(context) + 'px;">');
-                            pushStyles(context);
-                        }
-                        applyStyles(context);
-                        context.res.push(item);
-                    }
-                    else {
-                        ignoreNextText = false;
-                    }
+                    processString(context, localState, item);
                 }
                 else {
-                    pushStyles(context);
-                    format(context, item.group);
-                    popStyles(context);
+                    if (localState.childGroupType === GroupType.FONTTABLE) {
+                        processFontTable(context, item.group);
+                    }
+                    else {
+                        pushStyles(context);
+                        format(context, item.group, localState.childGroupType);
+                        popStyles(context);
+                    }
                 }
             }
         }
@@ -210,15 +306,55 @@ function format(context, data) {
     return context.res;
 }
 
-export default function(parsedRtf) {
+export default function(parsedRtf, options) {
     const context = {
         res: [],
         divIndex: -1,
         inheritedStyles: [],
         styles: {},
         tabIndex: 0,
-        tabs: []
+        tabs: [],
+        colors: [],
+        fonts: [],
+        margins: options.margins
     };
-    format(context, parsedRtf.group);
-    return '<div style="font-family: \'Times New Roman\';">' + context.res.join('') + '</div>';
+    format(context, parsedRtf.group, GroupType.ROOT);
+    const bodyStyles = {
+        'margin': 0,
+        'width': twipToPx(context.paperWidth) + 'px',
+        'height': twipToPx(context.paperHeight) + 'px',
+        'color': context.colors.length ? context.colors[0] : '#000000'
+    };
+    const font = context.fonts.length ? context.fonts[0].name : undefined;
+    if (font) {
+        bodyStyles['font'] = font;
+    }
+    const mainDivStyles = {
+        'position': 'absolute',
+        'left': twipToPx(context.margins[3]) + 'px',
+        'top': twipToPx(context.margins[0]) + 'px',
+        'width': getContentWidth(context) + 'px',
+        'height': getContentHeight(context) + 'px'
+    };
+    const vertCenterDivStyles = {
+        'position': 'relative',
+        'top': '50%',
+        '-webkit-transform': 'translateY(-50%)',
+        '-moz-transform': 'translateY(-50%)',
+        '-ms-transform': 'translateY(-50%)',
+        '-o-transform': 'translateY(-50%)',
+        'transform': 'translateY(-50%)',
+        'display': 'block'
+    };
+    const innerDivStyles = (options.vertAlign === 'center') ? vertCenterDivStyles : {};
+    return '' +
+        '<html>\n' +
+        '<body style="' + formatStyles(bodyStyles) + '">\n' +
+        ' <div style="' + formatStyles(mainDivStyles) + '">\n' +
+        '  <div style="' + formatStyles(innerDivStyles) + '">\n' +
+        context.res.join('') +
+        '  </div>\n' +
+        ' </div>\n' +
+        '</body>\n' +
+        '</html>';
 };
