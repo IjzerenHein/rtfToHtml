@@ -336,17 +336,27 @@ export default function(parsedRtf, options) {
         'width': getContentWidth(context) + 'px',
         'height': getContentHeight(context) + 'px'
     };
-    const vertCenterDivStyles = {
-        'position': 'relative',
-        'top': '50%',
-        '-webkit-transform': 'translateY(-50%)',
-        '-moz-transform': 'translateY(-50%)',
-        '-ms-transform': 'translateY(-50%)',
-        '-o-transform': 'translateY(-50%)',
-        'transform': 'translateY(-50%)',
-        'display': 'block'
-    };
-    const innerDivStyles = (options.vertAlign === 'center') ? vertCenterDivStyles : {};
+    let innerDivStyles = {};
+    switch (options.vertAlign) {
+        case 'center':
+            innerDivStyles = {
+                'position': 'relative',
+                'top': '50%',
+                '-webkit-transform': 'translateY(-50%)',
+                '-moz-transform': 'translateY(-50%)',
+                '-ms-transform': 'translateY(-50%)',
+                '-o-transform': 'translateY(-50%)',
+                'transform': 'translateY(-50%)',
+                'display': 'block'
+            };
+            break;
+        case 'bottom':
+            innerDivStyles = {
+                'position': 'absolute',
+                'bottom': '0'
+            };
+            break;
+    }
     return '' +
         '<html>\n' +
         '<body style="' + formatStyles(bodyStyles) + '">\n' +
