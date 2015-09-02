@@ -13,13 +13,13 @@ codes
  = codes:(code)+ (space)* {return codes}
 
 code
- = (space)* "\\" code:[\'0-9a-z\n]+ (space)* optional:"?"? {return code.join('').replace('\n', '').replace('\r', '') + (optional || '')}
+ = (space)* "\\" code:[\'0-9a-z\n\*]+ (space)* optional:"?"? {return code.join('').replace('\n', '').replace('\r', '') + (optional || '')}
 
 text
  = words:(word)+ {return words.join('')}
 
 word
- = leadingSpace:(space)* chars:[0-9A-Za-z\.;\:\-\,\!]+ trailingSpace:(space)* {return (leadingSpace || '') + chars.join('') + (trailingSpace || '')}
+ = leadingSpace:(space)* chars:[0-9A-Za-z\.;\:\-\,\!\*\&\%\@\#\(\)]+ trailingSpace:(space)* {return (leadingSpace || '') + chars.join('') + (trailingSpace || '')}
 
 space
  = " " {return " "}
