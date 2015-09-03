@@ -21,31 +21,33 @@ const options = {
 };
 if (program.width) {
     options.width = program.width;
-    console.log('--width ' + program.width)
+    console.log('--width ' + program.width);
 }
 if (program.height) {
     options.height = program.height;
-    console.log('--height ' + program.height)
+    console.log('--height ' + program.height);
 }
 if (program.margins) {
     options.margins = JSON.parse(program.margins);
-    console.log('--margins ' + program.margins)
+    console.log('--margins ' + program.margins);
 }
 if (program.vertalign) {
     options.vertAlign = program.vertalign;
-    console.log('--vertalign ' + program.vertalign)
+    console.log('--vertalign ' + program.vertalign);
 }
 
 fs.readFile(program.args[0], 'utf8', (err, data) => {
-    //console.log(data);
+    if (err) {
+        return console.error(err);
+    }
     const parsedRtf = parser.parse(data);
     console.log(JSON.stringify(parsedRtf, undefined, 2));
     const formatter = htmlFormatter;
     const output = formatter(parsedRtf, options);
     if (program.args.length >= 2) {
-        fs.writeFile(program.args[1], output, (err) => {
-            if (err) {
-                console.log('ERROR: ' + err);
+        fs.writeFile(program.args[1], output, (err2) => {
+            if (err2) {
+                console.log('ERROR: ' + err2);
             }
         });
     }
