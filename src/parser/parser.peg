@@ -10,16 +10,21 @@ item
  / text:text {return text}
 
 codes
- = codes:(code)+ (space)* {return codes}
+ = codes:(code)+ {return codes}
+// = codes:(code)+ (space)* {return codes}
 
 code
- = (space)* "\\" code:[\'0-9a-z\n\*]+ (space)* optional:"?"? {return code.join('').replace('\n', '').replace('\r', '') + (optional || '')}
+ = (space)* "\\" code:[0-9a-z\n\*]+ optional:optional? {return code.join('').replace('\n', '').replace('\r', '') + (optional || '')}
+ / (space)* "\\\'" hex1:[0-9a-f] hex2:[0-9a-f] {return '\'' + hex1 + hex2}
+
+optional
+ = (space)* "?" {return '?'}
 
 text
  = words:(word)+ {return words.join('')}
 
 word
- = leadingSpace:(space)* chars:[0-9A-Za-z\.;\:\-\,\!\*\&\%\@\#\(\)]+ trailingSpace:(space)* {return (leadingSpace || '') + chars.join('') + (trailingSpace || '')}
+ = leadingSpace:(space)* chars:[0-9A-Za-z\.;\:\-\,\!\*\&\%\@\#\(\)]+ trailingSpace:(space)* {return (leadingSpace ? leadingSpace.join('') : '') + chars.join('') + (trailingSpace ? trailingSpace.join('') : '')}
 
 space
  = " " {return " "}

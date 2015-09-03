@@ -74,13 +74,11 @@ function getTabWidth(context) {
 }
 
 function getContentWidth(context) {
-    //const paperWidth = context.paperWidth - (context.marginLeft || 0) - (context.marginRight || 0);
-    return twipToPx(context.paperWidth - context.margins[3] - context.margins[1]);
+    return twipToPx((context.width || context.paperWidth) - context.margins[3] - context.margins[1]);
 }
 
 function getContentHeight(context) {
-    //const paperHeight = context.paperHeight - (context.marginTop || 0) - (context.marginBottom || 0);
-    return twipToPx(context.paperHeight - context.margins[0] - context.margins[2]);
+    return twipToPx((context.height || context.paperHeight) - context.margins[0] - context.margins[2]);
 }
 
 function parseIntCode(code, prefix) {
@@ -223,6 +221,7 @@ function format(context, data, groupType) {
                         localState.ignoreAll = true;
                         break;
                     case 'expndtw':
+                    case 'up':
                         localState.ignoreNextText = true;
                         break;
                     case 'tqr':
@@ -244,6 +243,8 @@ function format(context, data, groupType) {
                     case '\'90': insertText = '&#xeA'; break;
                     case '\'91': insertText = '&#xeA'; break;
                     case '\'95': insertText = '&#xeE'; break;
+                    case '\'ca': insertText = '&nbsp;'; break;
+                    case '\'d0': insertText = '&ndash;'; break;
                 }
                 if (groupType === GroupType.ROOT) {
                     context.paperWidth = parseIntCode(code, 'paperw') || context.paperWidth;
@@ -316,13 +317,15 @@ export default function(parsedRtf, options) {
         tabs: [],
         colors: [],
         fonts: [],
-        margins: options.margins
+        margins: options.margins,
+        width: options.width,
+        height: options.height
     };
     format(context, parsedRtf.group, GroupType.ROOT);
     const bodyStyles = {
         'margin': 0,
-        'width': twipToPx(context.paperWidth) + 'px',
-        'height': twipToPx(context.paperHeight) + 'px',
+        'width': twipToPx(context.width || context.paperWidth) + 'px',
+        'height': twipToPx(context.height || context.paperHeight) + 'px',
         'color': context.colors.length ? context.colors[0] : '#000000'
     };
     const font = context.fonts.length ? context.fonts[0].name : undefined;

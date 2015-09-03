@@ -8,6 +8,8 @@ program
   .usage('[options] file [outputFile]')
   .option('-f, --format [format]', 'Output format [format]', 'html')
   .option('-m, --margins [top, right, left, bottom]', 'Margins')
+  .option('-w, --width [width]', 'Width')
+  .option('-h, --height [height]', 'Height')
   .option('-va, --vertalign [align]', 'Vertical alignment', 'top/center/bottom')
   .parse(process.argv);
 
@@ -17,6 +19,14 @@ const options = {
     margins: [0, 0, 0, 0],
     vertAlign: 'top'
 };
+if (program.width) {
+    options.width = program.width;
+    console.log('--width ' + program.width)
+}
+if (program.height) {
+    options.height = program.height;
+    console.log('--height ' + program.height)
+}
 if (program.margins) {
     options.margins = JSON.parse(program.margins);
     console.log('--margins ' + program.margins)
