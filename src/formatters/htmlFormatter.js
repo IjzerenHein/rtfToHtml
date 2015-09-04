@@ -381,7 +381,7 @@ export default function(parsedRtf, options) {
     };
     const font = context.fonts.length ? context.fonts[0].name : undefined;
     if (font) {
-        bodyStyles['font'] = font;
+        bodyStyles['font-family'] = font;
     }
     const mainDivStyles = {
         'position': 'absolute',
