@@ -28,7 +28,7 @@
   },
   "files": [
     "src",
-    "dist",
+    "rtfToHtml.sh",
     "LICENSE"
   ],
   "devDependencies": {
