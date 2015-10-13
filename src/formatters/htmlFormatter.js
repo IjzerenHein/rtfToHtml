@@ -42,7 +42,6 @@ class StyleManager {
         this._stack[this._stack.length - 1][style] = value;
     }
 
-
     getLineStyles(newStyles) {
         newStyles = newStyles || {};
         newStyles.display = newStyles.display || 'inline-block';
@@ -98,7 +97,6 @@ class StyleManager {
         this._applied = undefined;
     }
 }
-
 
 function twipToPx(twip) {
     return Math.floor(twip / 9);
@@ -326,6 +324,12 @@ function format(context, data, groupType) {
                     context.styles.set('text-indent', leftIndent ? (twipToPx(leftIndent) + 'px') : 0);
                     context.styles.set('white-space', leftIndent ? 'nowrap' : 'normal');
                 }
+                let colorIndex = parseIntCode(code, 'cf');
+                if (colorIndex && (colorIndex < context.colors.length)) {
+                    if (context.colors[colorIndex] !== context.colors[0]) {
+                        context.styles.set('color', context.colors[colorIndex]);
+                    }
+                }
                 if (insertText) {
                     if (!localState.ignoreAll) {
                         processString(context, localState, insertText);
@@ -369,8 +373,7 @@ export default function(parsedRtf, options) {
         fonts: [],
         margins: options.margins,
         width: options.width,
-        height: options.height,
-
+        height: options.height
     };
     format(context, parsedRtf.group, GroupType.ROOT);
     const bodyStyles = {
