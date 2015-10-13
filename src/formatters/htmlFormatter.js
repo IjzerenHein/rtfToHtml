@@ -35,6 +35,7 @@ class StyleManager {
             case 'white-space': return value === 'normal';
             case 'font-weight': return value === 'normal';
             case 'font-style': return value === 'normal';
+            case 'color': return value === 'inherit';
         }
     }
 
@@ -325,9 +326,12 @@ function format(context, data, groupType) {
                     context.styles.set('white-space', leftIndent ? 'nowrap' : 'normal');
                 }
                 let colorIndex = parseIntCode(code, 'cf');
-                if (colorIndex && (colorIndex < context.colors.length)) {
+                if ((colorIndex !== undefined) && (colorIndex < context.colors.length)) {
                     if (context.colors[colorIndex] !== context.colors[0]) {
                         context.styles.set('color', context.colors[colorIndex]);
+                    }
+                    else {
+                        context.styles.set('color', 'inherit');
                     }
                 }
                 if (insertText) {
