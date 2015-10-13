@@ -11,7 +11,7 @@ It supports the following features:
 - right-aligned tabs (/tqr)
 - tab-stops (/tx)
 - left-indent (/li)
-- colors (/colortbl)
+- colors (/colortbl, /red, /blue, /green, /cf)
 - font-names (/fonttbl)
 - font-size (/fs)
 - bold (/b)
