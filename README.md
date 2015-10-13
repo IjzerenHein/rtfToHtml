@@ -21,7 +21,7 @@ It supports the following features:
 - margins (/margl, /margr, /margt, /margb)
 
 
-The program in itself consists of two parts:
+The program itself consists of two parts:
 - A parser (converts RTF into a JSON data-structure)
 - A formatter (currently only HTML output is supported)
 
